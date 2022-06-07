@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const port = 3000;
+// const cors = require("cors");
 
 const bodyParser = require("body-parser");
 
@@ -8,6 +9,11 @@ const bodyParser = require("body-parser");
 // app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+// var corsOptions = {
+//   origin: "http://localhost",
+// };
+// app.use(cors(corsOptions));
 
 // middleware log
 const log = (req, res, next) => {

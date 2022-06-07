@@ -1,30 +1,32 @@
 const express = require("express");
 const routers = express.Router();
-const path = require("path");
-const cors = require("cors");
 const client = require("./connection");
 const ObjectId = require("mongodb").ObjectId;
 
-var corsOptions = {
-  origin: "http://localhost",
-};
-app.use(cors(corsOptions));
-
 routers.get("/", (req, res) => res.send("Hello World!"));
+
+routers.get("/jajal", async (req, res) => {
+  const db = client.db("latihan");
+  const products = await db.collection("products").find().toArray();
+  if (products.length > 0) {
+    // show product lists
+    res.send({
+      status: "success",
+      message: "list products found",
+      data: products,
+    });
+  } else {
+    res.send({
+      status: "success",
+      message: "list products not found",
+    });
+  }
+});
 
 routers.post("/login", (req, res) => {
   const { username, password } = req.body;
   res.send(`You are Logged In with username ${username} and pass ${password}`);
   // console.log(req.body.username);
-});
-
-routers.get("/preview-image", function (req, res) {
-  const filename = "logo.png";
-  res.sendFile(path.join(__dirname, filename), {
-    headers: {
-      "Content-Type": "image/png",
-    },
-  });
 });
 
 routers.get("/post/:id?", (req, res) => {
@@ -76,7 +78,7 @@ routers.post("/product/:id", async (req, res) => {
   }
 });
 
-routers.post("/product", multer().none(), async (req, res) => {
+routers.post("/product", async (req, res) => {
   if (client.isConnected()) {
     const { name, price, stock, status } = req.body;
     const db = client.db("latihan");
