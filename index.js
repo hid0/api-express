@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 const port = 3000;
-// const cors = require("cors");
+const cors = require("cors");
 
 const bodyParser = require("body-parser");
 
@@ -13,7 +13,7 @@ app.use(express.json());
 // var corsOptions = {
 //   origin: "http://localhost",
 // };
-// app.use(cors(corsOptions));
+app.use(cors());
 
 // middleware log
 const log = (req, res, next) => {
