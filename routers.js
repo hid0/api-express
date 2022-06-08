@@ -1,15 +1,17 @@
 const express = require("express");
 const routers = express.Router();
-const client = require("./connection");
+// const client = require("./connection");
+require("./connection");
+const Product = require("./Product");
 const ObjectId = require("mongodb").ObjectId;
+const multer = require("multer");
 
 routers.get("/", (req, res) => res.send("Hello World!"));
 
-routers.get("/jajal", async (req, res) => {
-  const db = client.db("latihan");
-  const products = await db.collection("products").find().toArray();
+// show all product
+routers.get("/products", async (req, res) => {
+  const products = await Product.find();
   if (products.length > 0) {
-    // show product lists
     res.send({
       status: "success",
       message: "list products found",
@@ -23,70 +25,31 @@ routers.get("/jajal", async (req, res) => {
   }
 });
 
-routers.post("/login", (req, res) => {
-  const { username, password } = req.body;
-  res.send(`You are Logged In with username ${username} and pass ${password}`);
-  // console.log(req.body.username);
-});
+// show single product
+routers.get("/product/:id", async (req, res) => {
+  const product = await Product.findById(req.params.id);
 
-routers.get("/post/:id?", (req, res) => {
-  if (req.params.id) res.send("artikel-" + req.params.id);
-});
-
-routers.get("/products", async (req, res) => {
-  if (client.isConnected()) {
-    const db = client.db("latihan");
-    const products = await db.collection("products").find().toArray();
-    if (products.length > 0) {
-      // show product lists
-      res.send({
-        status: "success",
-        message: "list products found",
-        data: products,
-      });
-    } else {
-      res.send({
-        status: "success",
-        message: "list products not found",
-      });
-    }
-  } else {
-    res.send({
-      status: "error",
-      message: "db connection failure",
-    });
-  }
-});
-
-routers.post("/product/:id", async (req, res) => {
-  if (client.isConnected()) {
-    const db = client.db("latihan");
-    const id = req.params.id;
-    const _id = ObjectId.isValid(id) ? ObjectId(id) : id;
-    const product = await db.collection("products").findOne({ _id });
-    // show single product
+  if (product) {
     res.send({
       status: "success",
-      message: "show single product",
+      message: "single product",
       data: product,
     });
   } else {
     res.send({
-      status: "error",
-      message: "db connection failure",
+      status: "warning",
+      message: "product not found",
     });
   }
 });
 
-routers.post("/product", async (req, res) => {
-  if (client.isConnected()) {
-    const { name, price, stock, status } = req.body;
-    const db = client.db("latihan");
+// add new product
+routers.post("/product", multer().none(), async (req, res) => {
+  const { name, price, stock, status } = req.body;
 
-    const result = await db
-      .collection("products")
-      .insertOne({ name, price, stock, status });
-    if (result.insertedCount == 1) {
+  try {
+    const product = await Product.create({ name, price, stock, status });
+    if (product) {
       res.send({
         status: "success",
         message: "add product successfully",
@@ -97,66 +60,71 @@ routers.post("/product", async (req, res) => {
         message: "add product failure",
       });
     }
-    // show product lists
-    res.send("add product");
-  } else {
+  } catch (error) {
     res.send({
       status: "error",
-      message: "db connection failure",
+      message: error.message,
     });
   }
 });
 
-routers.put("/product/:id", async (req, res) => {
-  if (client.isConnected()) {
-    const { name, price, stock, status } = req.body;
-    const db = client.db("latihan");
-
-    const result = await db.collection("products").updateOne(
+// update product
+routers.put("/product/:id", multer().none(), async (req, res) => {
+  const { name, price, stock, status } = req.body;
+  try {
+    const result = await Product.updateOne(
       { _id: ObjectId(req.params.id) },
       {
-        $set: { name, price, stock, status },
-      }
+        name,
+        price,
+        stock,
+        status,
+      },
+      { runValidators: true }
     );
-    if (result.matchedCount == 1) {
-      // show product lists
+    if (result.ok == 1) {
       res.send({
         status: "success",
         message: "product updated",
+        data: result,
       });
     } else {
       res.send({
         status: "warning",
         message: "product update failed",
+        data: result,
       });
     }
-  } else {
+  } catch (error) {
     res.send({
       status: "error",
-      message: "db connection failure",
+      message: error.message,
     });
   }
 });
 
-routers.delete("/product", async (req, res) => {
-  if (client.isConnected()) {
-    const db = client.db("latihan");
-    const result = await db
-      .collection("products")
-      .deleteOne({ _id: ObjectId(req.params.id) });
+// delete product
+routers.delete("/product/:id", async (req, res) => {
+  try {
+    const result = await Product.deleteOne({ _id: ObjectId(req.params.id) });
     if (result.deletedCount == 1) {
       res.send({
         status: "success",
         message: "product deleted",
+        data: result,
       });
     } else {
       res.send({
         status: "warning",
         message: "product delete failed",
+        data: result,
       });
     }
-  } else {
-    res.send("db connection failure");
+  } catch (error) {
+    res.send({
+      status: "error",
+      message: error.message,
+    });
   }
 });
 
